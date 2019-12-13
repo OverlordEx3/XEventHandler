@@ -1,9 +1,4 @@
-/*
- * event_handler.c
- *
- *  Created on: Dec 13, 2019
- *      Author: ebeke
- */
+
 #include <stdbool.h>
 
 #ifndef SYS_MALLOC
@@ -40,6 +35,7 @@ struct Event {
 struct EventType {
 	int type;
 	struct Listener* eventListeners;
+	struct EventType* next;
 };
 
 enum EventStatus_e {
@@ -55,12 +51,60 @@ PRIVATE struct Event* eventList = NULL;
 
 PRIVATE void addEventTypeToList(int type)
 {
+	struct EventType* newEventType = NULL;
+	struct EventType* auxList = NULL;
 
+	newEventType = SYS_MALLOC(sizeof(struct EventType));
+
+	newEventType->type = type;
+	newEventType->eventListeners = NULL;
+	newEventType->next = NULL;
+
+	if(eventTypeList == NULL)
+	{
+		/* Empty list. Register first one */
+		eventTypeList = newEventType;
+		return;
+	}
+
+	auxList = eventTypeList;
+	while(auxList->next != NULL)
+	{
+		auxList = auxList->next;
+	}
+
+	/* Register new type at the end of the list */
+	auxList->next = newEventType;
+}
+
+PRIVATE void removeEventTypeFromList(int type)
+{
+	struct EventType* auxList = eventTypeList;
+	struct EventType* prevInList = eventTypeList;
+
+	while(auxList != NULL)
+	{
+		if(type == auxList->type)
+		{
+			prevInList->next = auxList->next;
+			/* Remove listeners */
+			//TODO
+			SYS_FREE(auxList);
+			break;
+		}
+		auxList = auxList->next;
+		prevInList = auxList;
+	}
 }
 
 void xRegisterEvent(int eventType)
 {
+	addEventTypeToList(eventType);
+}
 
+void xUnregisterEvent(int eventType)
+{
+	removeEventTypeFromList(eventType);
 }
 
 void xRaiseEvent(int event, void* args)

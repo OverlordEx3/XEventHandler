@@ -24,6 +24,7 @@ typedef void (*ListenerCallback_t)(int type, void* eventArgs);
 struct Listener {
 	SEM_TYPE waitLock;
 	ListenerCallback_t eventCallback;
+	struct Listener* next;
 };
 
 struct Event {
@@ -97,6 +98,34 @@ PRIVATE void removeEventTypeFromList(int type)
 	}
 }
 
+PRIVATE void addEventToList(int eventType, void* args)
+{
+	struct Event* newEvent = NULL;
+	struct Event* auxList = NULL;
+
+	newEvent = SYS_MALLOC(sizeof(struct Event));
+
+	newEvent->type = eventType;
+	newEvent->args = args;
+	newEvent->next = NULL;
+
+	if(eventList == NULL)
+	{
+		/* Empty list. Register first one */
+		eventList = newEvent;
+		return;
+	}
+
+	auxList = eventList;
+	while(auxList->next != NULL)
+	{
+		auxList = auxList->next;
+	}
+
+	/* Register new event at the end of the list */
+	auxList->next = newEvent;
+}
+
 void xRegisterEvent(int eventType)
 {
 	addEventTypeToList(eventType);
@@ -109,6 +138,7 @@ void xUnregisterEvent(int eventType)
 
 void xRaiseEvent(int event, void* args)
 {
+	addEventToList(event, args);
 
 }
 
